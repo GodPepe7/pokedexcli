@@ -12,6 +12,9 @@ func main() {
 		fmt.Print("Pokedex > ")
 		scanner.Scan()
 		input := scanner.Text()
-		ParseCommand(input)
+		err := ParseCommand(input)
+		if err != nil {
+			fmt.Println(err)
+		}
 	}
 }
