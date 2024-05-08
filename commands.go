@@ -20,7 +20,7 @@ type cliCommand struct {
 
 var cfg config = config{
 	Next:     "https://pokeapi.co/api/v2/location-area/",
-	Previous: "https://pokeapi.co/api/v2/location-area/",
+	Previous: "",
 }
 
 func getAllCmds() map[string]cliCommand {
