@@ -62,6 +62,11 @@ func getAllCmds() map[string]cliCommand {
 			description: "Gives info of catched pokemon by name",
 			callback:    commandInspect,
 		},
+		"pokedex": {
+			name:        "pokedex",
+			description: "Displays all catched pokemons",
+			callback:    commandPokedex,
+		},
 	}
 }
 
@@ -153,6 +158,7 @@ func commandCatch(config *config, params ...string) error {
 	if catched {
 		pokedex[pokemon.Name] = *pokemon
 		fmt.Println(pokemon.Name + " was caught!")
+		fmt.Println("You may now inspect it with the inspect command.")
 	} else {
 		fmt.Println(pokemon.Name + " escaped!")
 	}
@@ -177,6 +183,21 @@ func commandInspect(config *config, params ...string) error {
 	fmt.Println("Types:")
 	for _, poketype := range pokemon.Types {
 		fmt.Printf("  -%s\n", poketype.Type.Name)
+	}
+	return nil
+}
+
+func commandPokedex(config *config, params ...string) error {
+	if len(params) != 0 {
+		return fmt.Errorf("passed unexpected arguments to cmd")
+	}
+	fmt.Println("Your Pokedex:")
+	if len(pokedex) == 0 {
+		fmt.Println("You have no Pokemons yet")
+		return nil
+	}
+	for _, pokemon := range pokedex {
+		fmt.Println(" - " + pokemon.Name)
 	}
 	return nil
 }
