@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	pokeapi "github.com/godpepe7/pokedexcli/internal/pokeapi"
 )
@@ -15,7 +16,7 @@ type config struct {
 type cliCommand struct {
 	name        string
 	description string
-	callback    func(config *config) error
+	callback    func(config *config, params ...string) error
 }
 
 var cfg config = config{
@@ -41,14 +42,19 @@ func getAllCmds() map[string]cliCommand {
 			callback:    commandMap,
 		},
 		"mapb": {
-			name:        "map",
+			name:        "mapb",
 			description: "Gives the previous 20 location areas",
 			callback:    commandMapB,
+		},
+		"explore": {
+			name:        "explore",
+			description: "Gives all pokemons in given location",
+			callback:    commandExplore,
 		},
 	}
 }
 
-func commandHelp(config *config) error {
+func commandHelp(config *config, params ...string) error {
 	fmt.Println("Welcome to the Pokedex!")
 	fmt.Print("All commands:\n\n")
 	commands := getAllCmds()
@@ -59,13 +65,13 @@ func commandHelp(config *config) error {
 	return nil
 }
 
-func commandExit(config *config) error {
+func commandExit(config *config, params ...string) error {
 	os.Exit(0)
 	return nil
 }
 
-func commandMap(config *config) error {
-	locationArea, err := pokeapi.GetMapAreas(config.Next)
+func commandMap(config *config, params ...string) error {
+	locationArea, err := pokeapi.GetLocationAreas(config.Next)
 	if err != nil {
 		return err
 	}
@@ -81,12 +87,12 @@ func commandMap(config *config) error {
 	return nil
 }
 
-func commandMapB(config *config) error {
+func commandMapB(config *config, params ...string) error {
 	if config.Previous == "" {
 		fmt.Println("No previous location areas")
 		return nil
 	}
-	locationArea, err := pokeapi.GetMapAreas(config.Previous)
+	locationArea, err := pokeapi.GetLocationAreas(config.Previous)
 	if err != nil {
 		return err
 	}
@@ -98,17 +104,39 @@ func commandMapB(config *config) error {
 		config.Previous = ""
 	} else {
 		config.Previous = *locationArea.Previous
+	}
+	return nil
+}
+
+func commandExplore(config *config, params ...string) error {
+	if len(params) != 1 {
+		return fmt.Errorf("no location name passed")
+	}
+	name := params[0]
+	locationAreaDetails, err := pokeapi.GetLocationAreaDetails(name)
+	if err != nil {
+		return fmt.Errorf("failed executing cmd explore: %v", err)
+	}
+	fmt.Println("Exploring " + name + "...")
+	fmt.Println("Found Pokemon:")
+	for _, pokemon := range locationAreaDetails.PokemonEncounters {
+		fmt.Println(" - " + pokemon.Pokemon.Name)
 	}
 	return nil
 }
 
 func ParseCommand(input string) error {
+	splitInput := strings.Split(input, " ")
+	if len(splitInput) == 0 {
+		return nil
+	}
 	commands := getAllCmds()
-	cmd, ok := commands[input]
+	cmd, ok := commands[splitInput[0]]
 	if !ok {
 		return fmt.Errorf("command doesn't exist")
 	}
-	err := cmd.callback(&cfg)
+	args := splitInput[1:]
+	err := cmd.callback(&cfg, args...)
 	if err != nil {
 		return fmt.Errorf("error executing command: %v", err)
 	}
