@@ -31,6 +31,25 @@ type LocationAreaDetails struct {
 	} `json:"pokemon_encounters"`
 }
 
+type Pokemon struct {
+	BaseExperience int    `json:"base_experience"`
+	Height         int    `json:"height"`
+	Name           string `json:"name"`
+	Stats          []struct {
+		BaseStat int `json:"base_stat"`
+		Stat     struct {
+			Name string `json:"name"`
+			URL  string `json:"url"`
+		} `json:"stat"`
+	} `json:"stats"`
+	Types []struct {
+		Type struct {
+			Name string `json:"name"`
+		} `json:"type"`
+	} `json:"types"`
+	Weight int `json:"weight"`
+}
+
 var cache = pokecache.NewCache(5 * time.Minute)
 
 func fetch(url string) ([]byte, error) {
@@ -84,4 +103,23 @@ func GetLocationAreaDetails(name string) (*LocationAreaDetails, error) {
 	}
 	cache.Add(url, body)
 	return locationAreaDetails, nil
+}
+
+func GetPokemonInfo(name string) (*Pokemon, error) {
+	url := "https://pokeapi.co/api/v2/pokemon/" + name
+	body, inCache := cache.Get(url)
+	pokemon := &Pokemon{}
+	if !inCache {
+		var err error
+		body, err = fetch(url)
+		if err != nil {
+			return nil, err
+		}
+	}
+	err := json.Unmarshal(body, &pokemon)
+	if err != nil {
+		return pokemon, fmt.Errorf("failed to unmarshal response body")
+	}
+	cache.Add(url, body)
+	return pokemon, nil
 }
